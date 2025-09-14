@@ -60,8 +60,6 @@ input[type=file] { margin: 15px 0; }
     font-size:18px;
     color:#c71585;
 }
-
-/* Spinner */
 .spinner {
   border: 6px solid #f3f3f3;
   border-top: 6px solid #c71585;
@@ -78,7 +76,7 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement (test)!</h1>
+<h1>Welcome to Our Engagement Test 2!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <video id="preview" autoplay muted playsinline></video>
@@ -114,6 +112,7 @@ const modal = document.getElementById('uploadModal');
 const modalText = document.getElementById('modalText');
 const spinner = document.getElementById('spinner');
 
+// Get camera stream
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
   preview.srcObject = stream;
@@ -134,6 +133,7 @@ sendBtn.onclick = () => {
   let file;
   if(recordedChunks.length > 0) {
     file = new Blob(recordedChunks, { type: 'video/mp4' }); 
+    file.name = `video_${Date.now()}.mp4`;
   } else if(photoInput.files.length > 0) {
     file = photoInput.files[0];
   } else { 
@@ -146,33 +146,39 @@ sendBtn.onclick = () => {
   modalText.textContent = 'Uploading...';
   spinner.style.display = 'block';
 
-  const formData = new FormData();
-  formData.append("file", file, file.name);
+  // Convert to Base64
+  const reader = new FileReader();
+  reader.onload = function() {
+    const base64Data = reader.result.split(',')[1];
+    fetch("https://script.google.com/macros/s/AKfycbz3tZrLk1QKX6Jdbi3rMEQNGJlki1MgMRwG3wC1dGYXkFpt698Z1_dMiCOGxsZQkLY3/exec", {
+      method: "POST",
+      body: new URLSearchParams({
+        data: base64Data,
+        mimeType: file.type,
+        filename: file.name || `upload_${Date.now()}`
+      })
+    })
+    .then(res => res.text())
+    .then(text => {
+      console.log(text);
+      spinner.style.display = 'none';
+      modalText.textContent = "Thank you for sharing your message! 🎉";
 
-  fetch("https://script.google.com/macros/s/AKfycbylLhqWwah-nNByrR2eUWVOGUHTlD2erZm56E1_LDAWXhk86GKbZFyhhDpLGEVFwSI6/exec", { // Replace with your Apps Script URL
-    method: "POST",
-    body: formData
-  })
-  .then(res => res.text())
-  .then(text => {
-    console.log(text);
-    spinner.style.display = 'none';
-    modalText.textContent = "Thank you for sharing your message! 🎉";
-
-    setTimeout(() => {
-      modal.style.display = 'none';
-      recordedChunks = [];
-      photoInput.value = '';
-      playback.src = '';
-    }, 2000);
-  })
-  .catch(err => {
-    console.error(err);
-    spinner.style.display = 'none';
-    modalText.textContent = "Upload failed! Please try again.";
-
-    setTimeout(() => { modal.style.display = 'none'; }, 3000);
-  });
+      setTimeout(() => {
+        modal.style.display = 'none';
+        recordedChunks = [];
+        photoInput.value = '';
+        playback.src = '';
+      }, 2000);
+    })
+    .catch(err => {
+      console.error(err);
+      spinner.style.display = 'none';
+      modalText.textContent = "Upload failed! Please try again.";
+      setTimeout(() => { modal.style.display = 'none'; }, 3000);
+    });
+  };
+  reader.readAsDataURL(file);
 };
 </script>
 </body>
