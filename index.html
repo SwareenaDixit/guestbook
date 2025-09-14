@@ -116,7 +116,7 @@ sendBtn.onclick = () => {
     const reader = new FileReader();
     reader.onload = () => {
         const base64Data = reader.result.split(',')[1]; // remove prefix
-        fetch("https://script.google.com/macros/s/AKfycbznbBnEd9H80F-dr0eT3wJXnM7x6BTrX_Uobnot7RMInaHyrfRSmn6bdhJvqNrgZ6sj/exec", {
+        fetch("https://script.google.com/macros/s/AKfycbzYE3MrS02YVUlws54ayCgAvfI0yp6obIDqOQbeAS9EqE7w8eAk3lzCHnQVatw3AZuY/exec", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: `filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}&contents=${encodeURIComponent(base64Data)}`
@@ -135,3 +135,4 @@ sendBtn.onclick = () => {
 </script>
 </body>
 </html>
+
