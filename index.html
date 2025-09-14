@@ -73,24 +73,36 @@ input[type=file] { margin: 15px 0; }
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+#recordingBadge {
+  display: none;
+  color: white;
+  background-color: red;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin: 10px;
+}
+#actionButtons { display:none; margin-top:10px; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 5!</h1>
+<h1>Welcome to Our Engagement Test 6!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
+<div id="recordingBadge">● Recording...</div>
 <video id="preview" autoplay muted playsinline></video>
 <video id="playback" controls playsinline></video>
 <br>
 <button id="startVideo">Start Video</button>
 <button id="stopVideo">Stop Video</button>
 <br>
-<!-- allow multiple images/videos from camera roll -->
 <input type="file" accept="image/*,video/*" id="mediaInput" multiple>
 <br>
-<button id="send">Send</button>
+<div id="actionButtons">
+  <button id="send">Send</button>
+  <button id="discard">Discard</button>
+</div>
 
-<!-- Modal -->
 <div id="uploadModal">
   <div id="modalContentWrapper">
     <div id="modalContent">
@@ -101,136 +113,95 @@ input[type=file] { margin: 15px 0; }
 </div>
 
 <script>
-// ======= Updated recording + multi-file upload logic (cross-browser) =======
 let mediaRecorder;
 let recordedChunks = [];
 let currentMimeType = '';
-
 const preview = document.getElementById('preview');
 const playback = document.getElementById('playback');
 const startBtn = document.getElementById('startVideo');
 const stopBtn = document.getElementById('stopVideo');
 const sendBtn = document.getElementById('send');
+const discardBtn = document.getElementById('discard');
+const actionButtons = document.getElementById('actionButtons');
 const mediaInput = document.getElementById('mediaInput');
 const modal = document.getElementById('uploadModal');
 const modalText = document.getElementById('modalText');
 const spinner = document.getElementById('spinner');
-
-// Apps Script web app URL — keep yours here
+const recordingBadge = document.getElementById('recordingBadge');
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzQQvIFTFHyBQOWFj6cXNywv2LsPFtHXwNEtxbA6x4cX0POZRa8J6lXVmN6N3Pvru_/exec';
 
-// Detect best supported mime type for MediaRecorder
 function getSupportedMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
   if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) return 'video/webm;codecs=vp9';
   if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) return 'video/webm;codecs=vp8';
   if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4';
-  // Fallback
   return 'video/webm';
 }
 
-// Initialize camera & recorder
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
   preview.srcObject = stream;
   currentMimeType = getSupportedMimeType();
-
-  // Try to create MediaRecorder with the detected mimeType; fall back if it fails
   try {
     mediaRecorder = new MediaRecorder(stream, { mimeType: currentMimeType });
   } catch (err) {
-    console.warn('MediaRecorder init with mimeType failed, creating without mimeType. Error:', err);
+    console.warn('MediaRecorder init with mimeType failed, creating without mimeType.', err);
     mediaRecorder = new MediaRecorder(stream);
     currentMimeType = mediaRecorder.mimeType || currentMimeType || 'video/webm';
   }
 
-  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.ondataavailable = e => { if(e.data && e.data.size>0) recordedChunks.push(e.data); };
   mediaRecorder.onstop = () => {
     const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
     playback.src = URL.createObjectURL(blob);
+    actionButtons.style.display = 'block';
   };
 
-  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); alert('Recording started!'); };
-  stopBtn.onclick = () => { mediaRecorder.stop(); alert('Recording stopped!'); };
-})
-.catch(err => alert('Camera access denied: ' + err));
+  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); recordingBadge.style.display = 'inline-block'; actionButtons.style.display='none'; playback.src=''; };
+  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; };
+});
 
-// Utility: upload single file (base64 -> Apps Script)
-function uploadFileAsBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = function() {
-      const base64Data = reader.result.split(',')[1];
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: new URLSearchParams({
-          data: base64Data,
-          mimeType: file.type,
-          filename: file.name
-        })
-      })
-      .then(res => res.text())
-      .then(text => resolve(text))
-      .catch(err => reject(err));
+discardBtn.onclick = () => { recordedChunks=[]; playback.src=''; actionButtons.style.display='none'; };
+
+function uploadFileAsBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=function(){
+      const base64Data=reader.result.split(',')[1];
+      fetch(APPS_SCRIPT_URL,{
+        method:'POST',
+        body:new URLSearchParams({ data: base64Data, mimeType:file.type, filename:file.name })
+      }).then(res=>res.text()).then(resolve).catch(reject);
     };
-    reader.onerror = err => reject(err);
+    reader.onerror=err=>reject(err);
     reader.readAsDataURL(file);
   });
 }
 
-// Send: handle recorded video + multiple selected files sequentially
-sendBtn.onclick = () => {
+sendBtn.onclick = async () => {
   const filesToUpload = [];
-
-  // If a recording exists, add it first
-  if (recordedChunks.length > 0) {
-    const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
-    const ext = (currentMimeType && currentMimeType.includes('mp4')) ? 'mp4' : 'webm';
-    const filename = `video_${Date.now()}.${ext}`;
-    const fileRecorded = new File([blob], filename, { type: blob.type });
-    filesToUpload.push(fileRecorded);
+  if(recordedChunks.length>0){
+    const blob=new Blob(recordedChunks,{type:currentMimeType||'video/webm'});
+    const ext=(currentMimeType && currentMimeType.includes('mp4'))?'mp4':'webm';
+    filesToUpload.push(new File([blob],`video_${Date.now()}.${ext}`,{type:blob.type}));
   }
+  if(mediaInput.files.length>0) filesToUpload.push(...Array.from(mediaInput.files));
+  if(filesToUpload.length===0){alert('Please record a video or select one or more files first!'); return;}
 
-  // Add all selected files from input
-  if (mediaInput.files && mediaInput.files.length > 0) {
-    for (let i = 0; i < mediaInput.files.length; i++) {
-      filesToUpload.push(mediaInput.files[i]);
+  modal.style.display='block'; spinner.style.display='block';
+  try{
+    for(let i=0;i<filesToUpload.length;i++){
+      modalText.textContent=`Uploading ${i+1} of ${filesToUpload.length}...`;
+      await uploadFileAsBase64(filesToUpload[i]);
     }
+    spinner.style.display='none'; modalText.textContent='All files uploaded successfully! 🎉';
+    setTimeout(()=>{ modal.style.display='none'; recordedChunks=[]; mediaInput.value=''; playback.src=''; actionButtons.style.display='none'; },2000);
+  }catch(err){
+    console.error(err); spinner.style.display='none'; modalText.textContent='Upload failed! Please try again.';
+    setTimeout(()=>{ modal.style.display='none'; },3000);
   }
-
-  if (filesToUpload.length === 0) {
-    alert('Please record a video or select one or more files first!');
-    return;
-  }
-
-  // Show modal
-  modal.style.display = 'block';
-  spinner.style.display = 'block';
-
-  (async () => {
-    try {
-      for (let i = 0; i < filesToUpload.length; i++) {
-        modalText.textContent = `Uploading ${i+1} of ${filesToUpload.length}...`;
-        await uploadFileAsBase64(filesToUpload[i]);
-      }
-
-      spinner.style.display = 'none';
-      modalText.textContent = 'All files uploaded successfully! 🎉';
-
-      setTimeout(() => {
-        modal.style.display = 'none';
-        recordedChunks = [];
-        mediaInput.value = '';
-        playback.src = '';
-      }, 2000);
-    } catch (err) {
-      console.error('Upload error:', err);
-      spinner.style.display = 'none';
-      modalText.textContent = 'Upload failed! Please try again.';
-      setTimeout(() => { modal.style.display = 'none'; }, 3000);
-    }
-  })();
 };
 </script>
 </body>
 </html>
+
