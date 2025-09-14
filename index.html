@@ -164,6 +164,7 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   mediaRecorder.onstop = () => {
     const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
     playback.src = URL.createObjectURL(blob);
+    playback.style.display = 'block'; 
     preview.style.display = 'none'; 
     stopBtn.style.display = 'none'; 
     actionButtons.style.display = 'block';
@@ -171,7 +172,7 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   };
 
   startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); recordingBadge.style.display = 'inline-block'; actionButtons.style.display='none'; playback.src=''; stopBtn.style.display = 'inline-block';};
-  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; stopBtn.style.display = 'none'; };
+  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; stopBtn.style.display = 'none'; startBtn.style.display = 'none'; };
 });
 
 discardBtn.onclick = () => { 
