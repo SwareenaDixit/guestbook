@@ -86,7 +86,7 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 10!</h1>
+<h1>Welcome to Our Engagement Test 11!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
@@ -206,7 +206,7 @@ sendBtn.onclick = async () => {
       await uploadFileAsBase64(filesToUpload[i]);
     }
     spinner.style.display='none'; modalText.textContent='All files uploaded successfully! 🎉';
-    setTimeout(()=>{ modal.style.display='none'; recordedChunks=[]; mediaInput.value=''; playback.src=''; actionButtons.style.display='none'; },2000);
+    setTimeout(()=>{ modal.style.display='none'; recordedChunks=[]; mediaInput.value=''; playback.src=''; playback.style.display='none'; actionButtons.style.display='none'; },2000);
   }catch(err){
     console.error(err); spinner.style.display='none'; modalText.textContent='Upload failed! Please try again.';
     setTimeout(()=>{ modal.style.display='none'; },3000);
@@ -215,6 +215,7 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
+
 
 
 
