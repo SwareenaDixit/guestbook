@@ -76,7 +76,7 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 3!</h1>
+<h1>Welcome to Our Engagement Test 4!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <video id="preview" autoplay muted playsinline></video>
@@ -100,8 +100,11 @@ input[type=file] { margin: 15px 0; }
 </div>
 
 <script>
+// ======= Updated recording + upload logic (cross-browser) =======
 let mediaRecorder;
 let recordedChunks = [];
+let currentMimeType = '';
+
 const preview = document.getElementById('preview');
 const playback = document.getElementById('playback');
 const startBtn = document.getElementById('startVideo');
@@ -112,33 +115,58 @@ const modal = document.getElementById('uploadModal');
 const modalText = document.getElementById('modalText');
 const spinner = document.getElementById('spinner');
 
-// Get camera stream
+// Detect best supported mime type for MediaRecorder
+function getSupportedMimeType() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) return 'video/webm;codecs=vp9';
+  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) return 'video/webm;codecs=vp8';
+  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4';
+  // Fallback
+  return 'video/webm';
+}
+
+// Initialize camera & recorder
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
   preview.srcObject = stream;
-  mediaRecorder = new MediaRecorder(stream);
+  currentMimeType = getSupportedMimeType();
 
-  mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
-  mediaRecorder.onstop = () => { 
-    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+  // Try to create MediaRecorder with the detected mimeType; fall back if it fails
+  try {
+    mediaRecorder = new MediaRecorder(stream, { mimeType: currentMimeType });
+  } catch (err) {
+    // Some browsers might throw if mimeType option isn't supported; create without options
+    console.warn('MediaRecorder init with mimeType failed, creating without mimeType. Error:', err);
+    mediaRecorder = new MediaRecorder(stream);
+    // set a sensible mime type for blobs
+    currentMimeType = mediaRecorder.mimeType || currentMimeType || 'video/webm';
+  }
+
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
     playback.src = URL.createObjectURL(blob);
   };
 
-  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); alert("Recording started!"); };
-  stopBtn.onclick = () => { mediaRecorder.stop(); alert("Recording stopped!"); };
+  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); alert('Recording started!'); };
+  stopBtn.onclick = () => { mediaRecorder.stop(); alert('Recording stopped!'); };
 })
-.catch(err => alert("Camera access denied: " + err));
+.catch(err => alert('Camera access denied: ' + err));
 
 sendBtn.onclick = () => {
   let file;
-  if(recordedChunks.length > 0) {
-    file = new Blob(recordedChunks, { type: 'video/mp4' }); 
-    file.name = `video_${Date.now()}.mp4`;
-  } else if(photoInput.files.length > 0) {
+
+  if (recordedChunks.length > 0) {
+    // Create a File from the recorded chunks so it has a name property
+    const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
+    const ext = (currentMimeType && currentMimeType.includes('mp4')) ? 'mp4' : 'webm';
+    const filename = `video_${Date.now()}.${ext}`;
+    file = new File([blob], filename, { type: blob.type });
+  } else if (photoInput.files.length > 0) {
     file = photoInput.files[0];
-  } else { 
-    alert("Please record a video or select a photo first!"); 
-    return; 
+  } else {
+    alert('Please record a video or select a photo first!');
+    return;
   }
 
   // Show modal
@@ -146,23 +174,25 @@ sendBtn.onclick = () => {
   modalText.textContent = 'Uploading...';
   spinner.style.display = 'block';
 
-  // Convert to Base64
+  // Convert to Base64 and send as URL-encoded form (Apps Script expects this)
   const reader = new FileReader();
   reader.onload = function() {
     const base64Data = reader.result.split(',')[1];
-    fetch("https://script.google.com/macros/s/AKfycbzzQQvIFTFHyBQOWFj6cXNywv2LsPFtHXwNEtxbA6x4cX0POZRa8J6lXVmN6N3Pvru_/exec", {
-      method: "POST",
+
+    // IMPORTANT: replace this URL with your Apps Script web app URL if it's different
+    fetch('https://script.google.com/macros/s/AKfycbzzQQvIFTFHyBQOWFj6cXNywv2LsPFtHXwNEtxbA6x4cX0POZRa8J6lXVmN6N3Pvru_/exec', {
+      method: 'POST',
       body: new URLSearchParams({
         data: base64Data,
         mimeType: file.type,
-        filename: file.name || `upload_${Date.now()}`
+        filename: file.name
       })
     })
     .then(res => res.text())
     .then(text => {
-      console.log(text);
+      console.log('Server response:', text);
       spinner.style.display = 'none';
-      modalText.textContent = "Thank you for sharing your message! 🎉";
+      modalText.textContent = 'Thank you for sharing your message! 🎉';
 
       setTimeout(() => {
         modal.style.display = 'none';
@@ -174,7 +204,7 @@ sendBtn.onclick = () => {
     .catch(err => {
       console.error(err);
       spinner.style.display = 'none';
-      modalText.textContent = "Upload failed! Please try again.";
+      modalText.textContent = 'Upload failed! Please try again.';
       setTimeout(() => { modal.style.display = 'none'; }, 3000);
     });
   };
@@ -183,4 +213,3 @@ sendBtn.onclick = () => {
 </script>
 </body>
 </html>
-
