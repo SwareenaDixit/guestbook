@@ -86,8 +86,8 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 11!</h1>
-<h2>Record a Video or Take a Photo for Us 💖</h2>
+<h1>Welcome to Our Engagement Guestbook!</h1>
+<h2>Record a Video Message or Upload Memories for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
 <div id="videoContainer" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
@@ -96,7 +96,7 @@ input[type=file] { margin: 15px 0; }
 </div>
 <br>
 <button id="startVideo">Start Video</button>
-<button id="stopVideo">Stop Video</button>
+<button id="stopVideo" style="display:none;">Stop Video</button>
 <br>
 <input type="file" accept="image/*,video/*" id="mediaInput" multiple>
 <br>
@@ -168,8 +168,8 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
     actionButtons.style.display = 'block';
   };
 
-  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); recordingBadge.style.display = 'inline-block'; actionButtons.style.display='none'; playback.src=''; };
-  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; };
+  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); recordingBadge.style.display = 'inline-block'; actionButtons.style.display='none'; playback.src=''; stopBtn.style.display = 'inline-block';};
+  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; stopBtn.style.display = 'none'; };
 });
 
 discardBtn.onclick = () => { recordedChunks=[]; playback.src=''; actionButtons.style.display='none'; mediaInput.value = ''; playback.style.display = 'none';};
@@ -215,6 +215,7 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
+
 
 
 
