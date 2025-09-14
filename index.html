@@ -86,12 +86,14 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 9!</h1>
+<h1>Welcome to Our Engagement Test 10!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
-<video id="preview" autoplay muted playsinline></video>
-<video id="playback" controls playsinline style="display:none;"></video>
+<div id="videoContainer" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+  <video id="preview" autoplay muted playsinline style="max-width:45%;"></video>
+  <video id="playback" controls playsinline style="display:none; max-width:45%;"></video>
+</div>
 <br>
 <button id="startVideo">Start Video</button>
 <button id="stopVideo">Stop Video</button>
@@ -213,6 +215,7 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
+
 
 
 
