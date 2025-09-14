@@ -132,9 +132,14 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 
 sendBtn.onclick = () => {
   let file;
-  if(recordedChunks.length > 0) file = recordedChunks[0];
-  else if(photoInput.files.length > 0) file = photoInput.files[0];
-  else { alert("Please record a video or select a photo first!"); return; }
+  if(recordedChunks.length > 0) {
+    file = new Blob(recordedChunks, { type: 'video/mp4' }); // combine all video chunks
+  } else if(photoInput.files.length > 0) {
+    file = photoInput.files[0];
+  } else { 
+    alert("Please record a video or select a photo first!"); 
+    return; 
+  }
 
   const reader = new FileReader();
   reader.onload = () => {
