@@ -100,14 +100,14 @@ video {
 }
 button:hover { background-color: #ff1493; } */
 
-/* button {
+button {
   margin: 10px 5px;
   padding: 14px 35px;
   font-size: 16px;
   cursor: pointer;
   border-radius: 50px;
   border: none;
-  background: linear-gradient(135deg, #c71585, #ff1493);
+  background: linear-gradient(135deg, #c71585, #ff1493); /* darker, more visible */
   color: white;
   font-weight: 700;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -116,47 +116,9 @@ button:hover { background-color: #ff1493; } */
 button:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-} */
-
-/* input[type=file] { margin: 15px 0; } */
-
-button, input[type="file"] {
-  margin: 5px;
-  padding: 12px 25px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 8px;
-  border: none;
-  background-color: #ec407a;  /* lighter pink to match subheading */
-  color: white;
-  font-weight: bold;
-  transition: background-color 0.3s, transform 0.2s;
 }
 
-button:hover, input[type="file"]:hover {
-  background-color: #c2185b;  /* darker pink on hover like heading */
-  transform: scale(1.05);      /* subtle hover zoom */
-}
-
-.file-button {
-  display: inline-block;
-  margin: 5px;
-  padding: 12px 25px;
-  font-size: 16px;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #ec407a, #c2185b); /* match your theme */
-  color: white;
-  font-weight: bold;
-  transition: background-color 0.3s, transform 0.2s;
-  text-align: center;
-}
-
-.file-button:hover {
-  background-color: #c2185b;
-  transform: scale(1.05);
-
+input[type=file] { margin: 15px 0; }
 
 /* Modal styling */
 #uploadModal {
@@ -228,9 +190,7 @@ button:hover, input[type="file"]:hover {
 <button id="startVideo">Start Video</button>
 <button id="stopVideo" style="display:none;">Stop Video</button>
 <br>
-<!-- <input type="file" accept="image/*,video/*" id="mediaInput" multiple> -->
-<input type="file" accept="image/*,video/*" id="mediaInput" multiple hidden>
-<label for="mediaInput" class="file-button">Choose Files</label>
+<input type="file" accept="image/*,video/*" id="mediaInput" multiple>
 <br>
 <div id="actionButtons">
   <button id="send">Send</button>
@@ -370,25 +330,4 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
