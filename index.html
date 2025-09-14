@@ -13,19 +13,15 @@ body {
   color: #333;
 }
 h1, h2 { color: #c71585; }
-#videoContainer {
-  width: 100%; 
-  max-width: 600px;  /* limit for large phones */
-  margin: 0 auto;
-  position: relative;
-}
 video {
   border: 2px solid #c71585;
   border-radius: 8px;
-  margin: 10px 0;
-  width: 100%;       /* full container width */
-  height: auto;      /* maintain aspect ratio */
-  object-fit: contain; /* scale video to fit width without distortion */
+  margin: 0 auto;
+  width: 100vw;        /* full viewport width */
+  height: 100vh;       /* full viewport height */
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;   /* fills the container, crops if needed */
 }
 button {
   margin: 5px;
@@ -98,7 +94,7 @@ input[type=file] { margin: 15px 0; }
 <h2>Record a Video Message or Upload Memories for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
-<div id="videoContainer" style="display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; padding:0; margin:0;">
+<div id="videoContainer" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
   <video id="preview" autoplay muted playsinline style="max-width:45%;"></video>
   <video id="playback" controls playsinline style="display:none; max-width:45%;"></video>
 </div>
