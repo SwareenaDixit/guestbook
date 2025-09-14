@@ -9,20 +9,32 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: center;
   padding: 20px;
+  margin: 0;
   background: linear-gradient(to bottom, #fff1f5, #ffe4e1);
   color: #333;
+  overflow-x: hidden;
 }
-h1, h2 { color: #c71585; }
+h1, h2 { color: #c71585; margin: 10px 0; }
+
+#videoContainer {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: black;
+}
+
 video {
+  width: 100%;
+  height: auto;
+  max-height: 90vh; /* prevents video from overflowing screen height */
   border: 2px solid #c71585;
   border-radius: 8px;
-  margin: 0 auto;
-  width: 100vw;        /* full viewport width */
-  height: 100vh;       /* full viewport height */
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;   /* fills the container, crops if needed */
+  object-fit: contain;
 }
+
 button {
   margin: 5px;
   padding: 12px 25px;
@@ -35,34 +47,35 @@ button {
   transition: background-color 0.3s;
 }
 button:hover { background-color: #ff1493; }
+
 input[type=file] { margin: 15px 0; }
 
 /* Modal styling */
 #uploadModal {
-    display: none;
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background-color: rgba(0,0,0,0.5);
-    z-index:1000;
+  display: none;
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index:1000;
 }
 #modalContentWrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 #modalContent {
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    width:80%;
-    max-width:300px;
-    text-align:center;
-    font-size:18px;
-    color:#c71585;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  width:80%;
+  max-width:300px;
+  text-align:center;
+  font-size:18px;
+  color:#c71585;
 }
 .spinner {
   border: 6px solid #f3f3f3;
@@ -77,6 +90,7 @@ input[type=file] { margin: 15px 0; }
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
 #recordingBadge {
   display: none;
   color: white;
@@ -87,17 +101,21 @@ input[type=file] { margin: 15px 0; }
   margin: 10px;
 }
 #actionButtons { display:none; margin-top:10px; }
+
 </style>
 </head>
 <body>
+
 <h1>Welcome to Our Engagement Guestbook!</h1>
 <h2>Record a Video Message or Upload Memories for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
-<div id="videoContainer" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
-  <video id="preview" autoplay muted playsinline style="max-width:45%;"></video>
-  <video id="playback" controls playsinline style="display:none; max-width:45%;"></video>
+
+<div id="videoContainer">
+  <video id="preview" autoplay muted playsinline></video>
+  <video id="playback" controls playsinline style="display:none;"></video>
 </div>
+
 <br>
 <button id="startVideo">Start Video</button>
 <button id="stopVideo" style="display:none;">Stop Video</button>
@@ -130,25 +148,21 @@ const sendBtn = document.getElementById('send');
 const discardBtn = document.getElementById('discard');
 const actionButtons = document.getElementById('actionButtons');
 const mediaInput = document.getElementById('mediaInput');
-// Show action buttons when user selects files manually
-mediaInput.addEventListener('change', () => {
-  if(mediaInput.files.length > 0) {
-    actionButtons.style.display = 'block';
-  } else if(recordedChunks.length === 0) {
-    actionButtons.style.display = 'none';
-  }
-});
 const modal = document.getElementById('uploadModal');
 const modalText = document.getElementById('modalText');
 const spinner = document.getElementById('spinner');
 const recordingBadge = document.getElementById('recordingBadge');
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzQQvIFTFHyBQOWFj6cXNywv2LsPFtHXwNEtxbA6x4cX0POZRa8J6lXVmN6N3Pvru_/exec';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+mediaInput.addEventListener('change', () => {
+  actionButtons.style.display = mediaInput.files.length > 0 ? 'block' : 'none';
+});
 
 function getSupportedMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
-  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) return 'video/webm;codecs=vp9';
-  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) return 'video/webm;codecs=vp8';
-  if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4';
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) return 'video/webm;codecs=vp9';
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) return 'video/webm;codecs=vp8';
+  if (MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4';
   return 'video/webm';
 }
 
@@ -156,66 +170,72 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
   preview.srcObject = stream;
   currentMimeType = getSupportedMimeType();
-  try {
-    mediaRecorder = new MediaRecorder(stream, { mimeType: currentMimeType });
-  } catch (err) {
-    console.warn('MediaRecorder init with mimeType failed, creating without mimeType.', err);
-    mediaRecorder = new MediaRecorder(stream);
-    currentMimeType = mediaRecorder.mimeType || currentMimeType || 'video/webm';
-  }
+  try { mediaRecorder = new MediaRecorder(stream, { mimeType: currentMimeType }); }
+  catch(err) { mediaRecorder = new MediaRecorder(stream); currentMimeType = mediaRecorder.mimeType || currentMimeType || 'video/webm'; }
 
   mediaRecorder.ondataavailable = e => { if(e.data && e.data.size>0) recordedChunks.push(e.data); };
+
   mediaRecorder.onstop = () => {
     const blob = new Blob(recordedChunks, { type: currentMimeType || 'video/webm' });
     playback.src = URL.createObjectURL(blob);
-    playback.style.display = 'block'; 
-    preview.style.display = 'none'; 
-    stopBtn.style.display = 'none'; 
+    playback.style.display = 'block';
+    preview.style.display = 'none';
+    stopBtn.style.display = 'none';
     actionButtons.style.display = 'block';
     startBtn.style.display = 'none';
   };
 
-  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); recordingBadge.style.display = 'inline-block'; actionButtons.style.display='none'; playback.src=''; stopBtn.style.display = 'inline-block';};
-  stopBtn.onclick = () => { mediaRecorder.stop(); recordingBadge.style.display = 'none'; stopBtn.style.display = 'none'; startBtn.style.display = 'none'; };
+  startBtn.onclick = () => {
+    recordedChunks = [];
+    mediaRecorder.start();
+    recordingBadge.style.display = 'inline-block';
+    actionButtons.style.display = 'none';
+    playback.src = '';
+    stopBtn.style.display = 'inline-block';
+    startBtn.style.display = 'none';
+  };
+
+  stopBtn.onclick = () => {
+    mediaRecorder.stop();
+    recordingBadge.style.display = 'none';
+  };
 });
 
-discardBtn.onclick = () => { 
-  recordedChunks=[]; 
-  playback.src=''; 
-  actionButtons.style.display='none'; 
-  mediaInput.value = ''; 
-  playback.style.display = 'none'; 
+discardBtn.onclick = () => {
+  recordedChunks = [];
+  playback.src = '';
+  playback.style.display = 'none';
   preview.style.display = 'block';
-  startBtn.style.display = 'inline-block';
-  stopBtn.style.display = 'none';
   actionButtons.style.display = 'none';
   mediaInput.value = '';
+  startBtn.style.display = 'inline-block';
+  stopBtn.style.display = 'none';
 };
 
-function uploadFileAsBase64(file){
+async function uploadFileAsBase64(file){
   return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=function(){
-      const base64Data=reader.result.split(',')[1];
-      fetch(APPS_SCRIPT_URL,{
+    const reader = new FileReader();
+    reader.onload = function(){
+      const base64Data = reader.result.split(',')[1];
+      fetch(APPS_SCRIPT_URL, {
         method:'POST',
         body:new URLSearchParams({ data: base64Data, mimeType:file.type, filename:file.name })
-      }).then(res=>res.text()).then(resolve).catch(reject);
+      }).then(res => res.text()).then(resolve).catch(reject);
     };
-    reader.onerror=err=>reject(err);
+    reader.onerror = err => reject(err);
     reader.readAsDataURL(file);
   });
 }
 
 sendBtn.onclick = async () => {
   const filesToUpload = [];
-  if(recordedChunks.length>0){
-    const blob=new Blob(recordedChunks,{type:currentMimeType||'video/webm'});
-    const ext=(currentMimeType && currentMimeType.includes('mp4'))?'mp4':'webm';
+  if(recordedChunks.length > 0){
+    const blob = new Blob(recordedChunks, {type: currentMimeType || 'video/webm'});
+    const ext = (currentMimeType && currentMimeType.includes('mp4')) ? 'mp4':'webm';
     filesToUpload.push(new File([blob],`video_${Date.now()}.${ext}`,{type:blob.type}));
   }
   if(mediaInput.files.length>0) filesToUpload.push(...Array.from(mediaInput.files));
-  if(filesToUpload.length===0){alert('Please record a video or select one or more files first!'); return;}
+  if(filesToUpload.length===0){ alert('Please record or select files first!'); return; }
 
   modal.style.display='block'; spinner.style.display='block';
   try{
@@ -224,35 +244,19 @@ sendBtn.onclick = async () => {
       await uploadFileAsBase64(filesToUpload[i]);
     }
     spinner.style.display='none'; modalText.textContent='All files uploaded successfully! 🎉';
-    setTimeout(()=>{ 
-      modal.style.display='none'; 
-      recordedChunks=[]; 
-      mediaInput.value=''; 
-      playback.src=''; 
-      playback.style.display='none'; 
-      preview.style.display = 'block';
-      actionButtons.style.display='none'; 
-      startBtn.style.display = 'inline-block';
-      stopBtn.style.display = 'none';
+    setTimeout(()=>{
+      modal.style.display='none';
+      recordedChunks=[]; mediaInput.value=''; playback.src=''; playback.style.display='none';
+      preview.style.display='block'; actionButtons.style.display='none';
+      startBtn.style.display='inline-block'; stopBtn.style.display='none';
     },2000);
   }catch(err){
-    console.error(err); spinner.style.display='none'; modalText.textContent='Upload failed! Please try again.';
+    console.error(err);
+    spinner.style.display='none';
+    modalText.textContent='Upload failed! Please try again.';
     setTimeout(()=>{ modal.style.display='none'; },3000);
   }
 };
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
