@@ -32,7 +32,45 @@ button {
 }
 button:hover { background-color: #ff1493; }
 input[type=file] { margin: 15px 0; }
-#thankyou { margin-top: 20px; font-size: 18px; color: #008000; display: none; }
+
+/* Modal styling */
+#uploadModal {
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+#modalContent {
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    width:80%;
+    max-width:300px;
+    text-align:center;
+    font-size:18px;
+    color:#c71585;
+}
+
+/* Spinner */
+.spinner {
+  border: 6px solid #f3f3f3; /* Light grey */
+  border-top: 6px solid #c71585; /* Pink */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  margin: 15px auto;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
@@ -49,7 +87,13 @@ input[type=file] { margin: 15px 0; }
 <br>
 <button id="send">Send</button>
 
-<p id="thankyou">Thank you for sharing your message! 🎉</p>
+<!-- Modal -->
+<div id="uploadModal">
+  <div id="modalContent">
+    <div class="spinner" id="spinner"></div>
+    <div id="modalText">Uploading...</div>
+  </div>
+</div>
 
 <script>
 let mediaRecorder;
@@ -60,7 +104,9 @@ const startBtn = document.getElementById('startVideo');
 const stopBtn = document.getElementById('stopVideo');
 const sendBtn = document.getElementById('send');
 const photoInput = document.getElementById('photoInput');
-const thankyou = document.getElementById('thankyou');
+const modal = document.getElementById('uploadModal');
+const modalText = document.getElementById('modalText');
+const spinner = document.getElementById('spinner');
 
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
@@ -87,20 +133,40 @@ sendBtn.onclick = () => {
   const reader = new FileReader();
   reader.onload = () => {
     const base64Data = reader.result.split(',')[1];
-    fetch("https://script.google.com/macros/s/AKfycbyhbWOXJfHJ63Ma74K3DEzPao93CNATpC0PDebT9w8FVEwy_C71n-9gQqLJbIrqiNv9/exec", { // replace with your Apps Script URL
+
+    // Show modal with spinner
+    modal.style.display = 'flex';
+    modalText.textContent = 'Uploading...';
+    spinner.style.display = 'block';
+
+    fetch("https://script.google.com/macros/s/AKfycbyhbWOXJfHJ63Ma74K3DEzPao93CNATpC0PDebT9w8FVEwy_C71n-9gQqLJbIrqiNv9/exec", { // Replace with your Apps Script URL
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}&contents=${encodeURIComponent(base64Data)}`
     })
     .then(res => res.text())
     .then(text => {
-      console.log(text); // For debugging
-      thankyou.style.display = "block";
-      recordedChunks = [];
-      photoInput.value = '';
-      playback.src = '';
+      console.log(text); // Debug
+      spinner.style.display = 'none';
+      modalText.textContent = "Thank you for sharing your message! 🎉";
+
+      setTimeout(() => {
+        modal.style.display = 'none';
+        recordedChunks = [];
+        photoInput.value = '';
+        playback.src = '';
+      }, 2000);
     })
-    .catch(err => alert("Upload failed: " + err));
+    .catch(err => {
+      console.error(err);
+      spinner.style.display = 'none';
+      modalText.textContent = "Upload failed! Please try again.";
+
+      // Keep modal visible for 3 seconds so guest sees error
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 3000);
+    });
   };
   reader.readAsDataURL(file);
 };
