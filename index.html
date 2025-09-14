@@ -3,47 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leave a Message for Us!</title>
+<title>Engagement Guestbook</title>
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
-    padding: 20px;
-    background: linear-gradient(to bottom, #fff1f5, #ffe4e1);
-    color: #333;
-  }
-  h1, h2 {
-    color: #c71585;
-  }
-  video {
-    border: 2px solid #c71585;
-    border-radius: 8px;
-    margin: 10px 0;
-    max-width: 90%;
-  }
-  button {
-    margin: 5px;
-    padding: 12px 25px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 8px;
-    border: none;
-    background-color: #ff69b4;
-    color: white;
-    transition: background-color 0.3s;
-  }
-  button:hover {
-    background-color: #ff1493;
-  }
-  input[type=file] {
-    margin: 15px 0;
-  }
-  #thankyou {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #008000;
-    display: none;
-  }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(to bottom, #fff1f5, #ffe4e1);
+  color: #333;
+}
+h1, h2 { color: #c71585; }
+video {
+  border: 2px solid #c71585;
+  border-radius: 8px;
+  margin: 10px 0;
+  max-width: 90%;
+}
+button {
+  margin: 5px;
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  background-color: #ff69b4;
+  color: white;
+  transition: background-color 0.3s;
+}
+button:hover { background-color: #ff1493; }
+input[type=file] { margin: 15px 0; }
+#thankyou { margin-top: 20px; font-size: 18px; color: #008000; display: none; }
 </style>
 </head>
 <body>
@@ -73,67 +62,48 @@ const sendBtn = document.getElementById('send');
 const photoInput = document.getElementById('photoInput');
 const thankyou = document.getElementById('thankyou');
 
-// Access camera
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 .then(stream => {
-    preview.srcObject = stream;
-    mediaRecorder = new MediaRecorder(stream);
+  preview.srcObject = stream;
+  mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.ondataavailable = e => {
-        if(e.data.size > 0) recordedChunks.push(e.data);
-    };
+  mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => { 
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+    playback.src = URL.createObjectURL(blob);
+  };
 
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-        playback.src = URL.createObjectURL(blob);
-    };
-
-    startBtn.onclick = () => {
-        recordedChunks = [];
-        mediaRecorder.start();
-        alert("Recording started!");
-    };
-
-    stopBtn.onclick = () => {
-        mediaRecorder.stop();
-        alert("Recording stopped!");
-    };
+  startBtn.onclick = () => { recordedChunks = []; mediaRecorder.start(); alert("Recording started!"); };
+  stopBtn.onclick = () => { mediaRecorder.stop(); alert("Recording stopped!"); };
 })
 .catch(err => alert("Camera access denied: " + err));
 
-// Upload to Google Drive via Apps Script
 sendBtn.onclick = () => {
-    let file;
-    if(recordedChunks.length > 0){
-        file = recordedChunks[0];
-    } else if(photoInput.files.length > 0){
-        file = photoInput.files[0];
-    } else {
-        alert("Please record a video or select a photo first!");
-        return;
-    }
+  let file;
+  if(recordedChunks.length > 0) file = recordedChunks[0];
+  else if(photoInput.files.length > 0) file = photoInput.files[0];
+  else { alert("Please record a video or select a photo first!"); return; }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-        const base64Data = reader.result.split(',')[1]; // remove prefix
-        fetch("https://script.google.com/macros/s/AKfycbyhbWOXJfHJ63Ma74K3DEzPao93CNATpC0PDebT9w8FVEwy_C71n-9gQqLJbIrqiNv9/exec", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}&contents=${encodeURIComponent(base64Data)}`
-        })
-        .then(res => res.text())
-        .then(() => {
-            thankyou.style.display = "block";
-            recordedChunks = [];
-            photoInput.value = '';
-            playback.src = '';
-        })
-        .catch(err => alert("Upload failed: " + err));
-    };
-    reader.readAsDataURL(file);
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64Data = reader.result.split(',')[1];
+    fetch("https://script.google.com/macros/s/AKfycbyhbWOXJfHJ63Ma74K3DEzPao93CNATpC0PDebT9w8FVEwy_C71n-9gQqLJbIrqiNv9/exec", { // replace with your Apps Script URL
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}&contents=${encodeURIComponent(base64Data)}`
+    })
+    .then(res => res.text())
+    .then(text => {
+      console.log(text); // For debugging
+      thankyou.style.display = "block";
+      recordedChunks = [];
+      photoInput.value = '';
+      playback.src = '';
+    })
+    .catch(err => alert("Upload failed: " + err));
+  };
+  reader.readAsDataURL(file);
 };
 </script>
 </body>
 </html>
-
-
