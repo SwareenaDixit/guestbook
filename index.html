@@ -86,7 +86,7 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 6!</h1>
+<h1>Welcome to Our Engagement Test 7!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <div id="recordingBadge">● Recording...</div>
@@ -124,6 +124,14 @@ const sendBtn = document.getElementById('send');
 const discardBtn = document.getElementById('discard');
 const actionButtons = document.getElementById('actionButtons');
 const mediaInput = document.getElementById('mediaInput');
+// Show action buttons when user selects files manually
+mediaInput.addEventListener('change', () => {
+  if(mediaInput.files.length > 0) {
+    actionButtons.style.display = 'block';
+  } else if(recordedChunks.length === 0) {
+    actionButtons.style.display = 'none';
+  }
+});
 const modal = document.getElementById('uploadModal');
 const modalText = document.getElementById('modalText');
 const spinner = document.getElementById('spinner');
@@ -204,4 +212,5 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
+
 
