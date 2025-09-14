@@ -76,7 +76,7 @@ input[type=file] { margin: 15px 0; }
 </style>
 </head>
 <body>
-<h1>Welcome to Our Engagement Test 2!</h1>
+<h1>Welcome to Our Engagement Test 3!</h1>
 <h2>Record a Video or Take a Photo for Us 💖</h2>
 
 <video id="preview" autoplay muted playsinline></video>
@@ -150,7 +150,7 @@ sendBtn.onclick = () => {
   const reader = new FileReader();
   reader.onload = function() {
     const base64Data = reader.result.split(',')[1];
-    fetch("https://script.google.com/macros/s/AKfycbz3tZrLk1QKX6Jdbi3rMEQNGJlki1MgMRwG3wC1dGYXkFpt698Z1_dMiCOGxsZQkLY3/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbzzQQvIFTFHyBQOWFj6cXNywv2LsPFtHXwNEtxbA6x4cX0POZRa8J6lXVmN6N3Pvru_/exec", {
       method: "POST",
       body: new URLSearchParams({
         data: base64Data,
@@ -183,3 +183,4 @@ sendBtn.onclick = () => {
 </script>
 </body>
 </html>
+
