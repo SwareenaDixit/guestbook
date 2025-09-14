@@ -118,7 +118,28 @@ button:hover {
   box-shadow: 0 10px 20px rgba(0,0,0,0.4);
 }
 
-input[type=file] { margin: 15px 0; }
+/* input[type=file] { margin: 15px 0; } */
+input[type="file"] {
+  background-color: #ec407a; /* pink */
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  background-color: #ec407a; /* same pink */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+input[type="file"]:hover::-webkit-file-upload-button {
+  background-color: #c2185b; /* darker pink on hover */
+}
 
 /* Modal styling */
 #uploadModal {
@@ -330,4 +351,5 @@ sendBtn.onclick = async () => {
 </script>
 </body>
 </html>
+
 
